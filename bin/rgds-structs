@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdsstructs.rb
+#
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/26/2007 (jdm): Initial version
+#
+##############################################################################
+
+
+require 'getoptlong'
+require 'gdsii/record.rb'
+include Gdsii
+
+# Build usage message
+if (file_name = ARGV[0]).nil? then
+  abort "
+Dumps a of structure names defined in the GDSII file.
+
+Usage: gdsstructs.rb <gds-file>
+
+"
+end
+
+# Extract the structure names from  the GDSII file
+File.open(file_name, 'rb') do |file|
+  while (record = Record.read(file)) do
+    if record.is_strname?
+      puts record.data_value
+    end
+  end
+end
+
+

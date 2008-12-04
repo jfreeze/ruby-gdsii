@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdssjoin.rb
+#
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 04/04/2007 (jdm): Initial version
+#
+##############################################################################
+
+
+require 'getoptlong'
+require 'gdsii'
+include Gdsii
+
+# Build usage message
+usage = "
+Joins structures from multiple GDSII files into a new GDSII file.
+
+Usage: gdssjoin.rb [options] <new-gds-file> <other-gds-files...>
+
+Options:
+
+ -s, --structs      Specify structure(s) in a space separated list to join.
+ -f, --force        Force overwritting of new GDSII file if it already exists.
+ -h, --help         Displays this usage message.
+
+"
+
+# Get command-line arguments
+force = false
+structs = []
+
+opts = GetoptLong.new(
+  ['--structs',   '-s', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--force',     '-f', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT],
+  ['--help',      '-h', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT]
+)
+
+opts.each do |option, argument|
+  case option
+  when '--help'      : abort usage
+  when '--structs'   : structs = argument.split(/\s+/)
+  when '--force'     : force = true
+  end
+end
+
+# Get GDSII file and output directory from command line
+new_gds_file, other_gds_files = ARGV[0], ARGV[1..-1]
+unless new_gds_file and other_gds_files
+  abort usage
+end
+
+# Check that output file does not exist (or force is set)
+if File.exists?(new_gds_file) and not force
+  abort "Output GDSII exists #{new_gds_file} use --force to overwrite"
+end
+
+# Open output GDSII file for write
+File.open(new_gds_file, 'wb') do |outf|
+
+  # Create library header
+  new_lib = Library.new('JOINED.DB')
+  new_lib.write_header(outf)
+  
+  # Loop through existing GDSII files and their structures; add to new
+  added_structs = {}
+  other_gds_files.each do |in_gds_file|
+    File.open(in_gds_file, 'rb') do |inf|
+      Library.read_header(inf)
+      Structure.read_each_header(inf) do |struct|
+        if added_structs[struct.name]
+          # already added; flag warning
+          warn "WARNING: Struct #{struct.name} in file #{in_gds_file} already added from file #{added_structs[struct.name]}; ignoring"
+        elsif structs.empty? or structs.member?(struct.name)
+          # no struct list given; or stuct on list
+          struct.write_header(outf)
+          Element.read_each(inf) {|element| element.write(outf)}
+          struct.write_footer(outf)
+          added_structs[struct.name] = in_gds_file
+        else
+          # not on provided list; skip this structure
+          Structure.seek_next(inf)        
+        end
+      end
+    end
+  end
+
+  # Create library footer
+  new_lib.write_footer(outf)
+  
+end

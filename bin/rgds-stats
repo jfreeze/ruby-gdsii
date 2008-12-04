@@ -1,0 +1,134 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdsstats.rb
+#
+# Dumps statistical information from a GDSII file.
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/26/2007 (jdm): Initial version
+#
+##############################################################################
+
+
+require 'getoptlong'
+require 'gdsii/record.rb'
+include Gdsii
+
+# Build usage message
+usage = "
+Dumps statistical information from a GDSII file.
+
+Usage: gdsssplit.rb [options] <gds-file> 
+
+Options:
+
+ -s, --structs    Specify structure(s) in a space separated list to process.
+                  The default behavior is to process all structures.
+ -h, --help       Displays this usage message.
+
+"
+
+# Get command-line arguments
+structs = []
+
+opts = GetoptLong.new(
+  ['--structs',     '-s', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--help',        '-h', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT]
+)
+
+opts.each do |option, argument|
+  case option
+  when '--help'      : abort usage
+  when '--structs'   : structs = argument.split(/\s+/)
+  end
+end
+
+# Get GDSII file directory from command line
+unless (gds_file = ARGV[0])
+  abort usage
+end
+
+# Read the GDSII file and write out resulting GDSII files
+File.open(gds_file, 'rb') do |inf|
+
+  # Set statistics hashes:
+#  lib_stats = Hash.new {|h,k| h[k] = 0}
+  str_stats = Hash.new {|h,k| h[k] = Hash.new {|h2,k2| h2[k2] = 0}}
+  
+  # Set parse flags
+  strname = nil
+  dt_cxt = nil
+  layer = nil
+  
+  # Read each record in the GDSII file
+  Record.read_each(inf) do |record|
+    
+    type = record.type
+    
+    case type
+    when GRT_STRNAME
+      # New structure definition... print header
+      strname = record.data_value
+      if structs.empty? or structs.member?(strname)
+        puts
+        puts '#' * 78
+        puts
+        puts "STRUCTURE: #{strname}"
+        # lib_stats[type] += 1
+      end
+    when GRT_SREF, GRT_AREF
+      # increment count for sref, aref, text, node, box
+      str_stats[nil][type] += 1
+    when GRT_BOUNDARY
+      # set datatype context to BOUNDARY
+      dt_cxt = type
+    when GRT_PATH
+      # set datatype context to PATH
+      dt_cxt = type
+    when GRT_LAYER
+      # capture the layer number - record when context is reached
+      layer = record.data_value
+    when GRT_DATATYPE, GRT_TEXTTYPE, GRT_NODETYPE, GRT_BOXTYPE
+      # record the layer for the given layer context
+      datatype = record.data_value
+      rec_num = (dt_cxt) ? dt_cxt : type
+      str_stats[[layer, datatype]][rec_num] += 1
+      dt_cxt = nil
+    when GRT_ENDSTR
+      # end structure definition
+      if structs.empty? or structs.member?(strname)
+        puts
+        printf("SRefs: %-12d\n", str_stats[nil][GRT_SREF])
+        printf("ARefs: %-12d\n", str_stats[nil][GRT_AREF])
+        puts
+        puts "Layer  Type             # Bnd      # Path      # Text       # Box      # Node"
+        puts '-' * 78
+        
+        # Show layer information
+        layers = str_stats.keys.compact.sort {|a, b| (a[0] <=> b[0]) <=> (a[1] <=> b[1])}
+        layers.each do |layer|
+          printf("%-6d %-6d     %11d %11d %11d %11d %11d\n",
+                 layer[0],
+                 layer[1],
+                 str_stats[layer][GRT_BOUNDARY],
+                 str_stats[layer][GRT_PATH],
+                 str_stats[layer][GRT_TEXTTYPE],
+                 str_stats[layer][GRT_BOXTYPE],
+                 str_stats[layer][GRT_NODETYPE]
+                 )
+        end
+        puts
+      end
+      str_stats.delete_if {|key,value| true}
+    end
+      
+  end
+end
+
+

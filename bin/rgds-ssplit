@@ -1,0 +1,113 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdsssplit.rb
+#
+# Splits a GDSII file into separate GDSII files.  A separate GDSII file will
+# be created for each structure in the original GDSII file and the new GDSII
+# files will be named after their structure name.  At this time there are
+# NO sref or aref intelligence (i.e. no hierarchy dependency checking) - so
+# only one structure will exist per file.
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/26/2007 (jdm): Initial version
+#
+##############################################################################
+
+
+require 'getoptlong'
+require 'gdsii'
+include Gdsii
+
+# Build usage message
+usage = "
+Splits a GDSII file into separate GDSII files.  A separate GDSII file will
+be created for each structure in the original GDSII file and the new GDSII
+files will be named after their structure name.  At this time there are
+NO sref or aref intelligence (i.e. no hierarchy dependency checking) - so
+only one structure will exist per file.
+
+Usage: gdsssplit.rb [options] <gds-file> <output-dir>
+
+Options:
+
+ -s, --structs    Specify structure(s) in a space separated list to extract.
+                  The default behavior is to extract all structures.
+ -f, --force      Force overwritting of GDSII files in the output directory
+                  if a file by the same name exists.
+ -e, --extension  Specify the output file GDSII extension to use.  Default
+                  is 'gds'.
+ -h, --help       Displays this usage message.
+
+"
+
+# Get command-line arguments
+force = false
+structs = []
+ext = 'gds'
+
+opts = GetoptLong.new(
+  ['--structs',   '-s', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--force',     '-f', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT],
+  ['--extension', '-e', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT],
+  ['--help',      '-h', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT]
+)
+
+opts.each do |option, argument|
+  case option
+  when '--help'      : abort usage
+  when '--structs'   : structs = argument.split(/\s+/)
+  when '--extension' : ext = argument
+  when '--force'     : force = true
+  end
+end
+
+# Get GDSII file and output directory from command line
+gds_file, output_dir = ARGV
+unless gds_file and output_dir
+  abort usage
+end
+
+# Check that GDSII file is readable and that output dir is writable
+unless File.readable? gds_file
+  abort "\nGDSII file does not exist or is not readable: #{gds_file}\n\n" + usage
+end
+
+# Check that output directory is writable
+unless File.directory? output_dir and File.writable? output_dir
+  abort "\nOutput directory is not writable: #{output_dir}\n\n" + usage
+end
+
+
+# Read the GDSII file and write out resulting GDSII files
+File.open(gds_file, 'rb') do |inf|
+  Library.read_header(inf) do |lib|
+    Structure.read_each_header(inf) do |struct|
+      if structs.empty? or structs.member?(struct.name)
+        # write lib & structure header to file
+        file_name = "#{output_dir}/#{struct.name}.#{ext}"
+        if File.exists? file_name and not force
+          warn "WARNING: #{file_name} already exists; use --force to override"
+        else
+          # open the file 
+          File.open(file_name, 'wb') do |outf|
+            lib.write_header(outf)
+            struct.write_header(outf)
+            Element.read_each(inf) {|element| element.write(outf)}
+            struct.write_footer(outf)
+            lib.write_footer(outf)
+          end
+        end
+      else        
+        # structure not on list; skip to next
+        Structure.seek_next(inf)        
+      end
+    end
+  end
+end
+

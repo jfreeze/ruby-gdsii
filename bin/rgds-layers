@@ -1,0 +1,53 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdslayers.rb
+#
+# Dumps a unique list of layers and their respective datatypes used in this
+# GDSII file.  Each layer/datatype pair is in the form 'LAYER DTYPE' with
+# a layer on each line.
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/26/2007 (jdm): Initial version
+#
+##############################################################################
+
+
+require 'getoptlong'
+require 'gdsii/record.rb'
+include Gdsii
+
+# Build usage message
+if (file_name = ARGV[0]).nil? then
+  abort "
+Dumps a unique list of layers and their respective datatypes used in this
+GDSII file.  Each layer/datatype pair is in the form 'LAYER DTYPE' with
+a layer on each line.
+
+Usage: gdslayers.rb <gds-file>
+
+"
+end
+
+# Extract the layer numbers from the GDSII file
+listed = {}
+File.open(file_name, 'rb') do |file|
+  layer = nil
+  while (record = Record.read(file)) do
+    case record.type
+    when GRT_LAYER
+      layer = record.data_value
+    when GRT_DATATYPE, GRT_TEXTTYPE, GRT_NODETYPE, GRT_BOXTYPE
+      key = [layer, datatype = record.data_value]
+      puts "#{layer} #{datatype}" unless listed[key]
+      listed[key] = true
+    end
+  end
+end
+
+

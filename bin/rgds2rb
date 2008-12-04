@@ -1,0 +1,99 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gds2rb.rb
+#
+# Reads a GDSII file and then generates the corresponding Ruby code necessary
+# to recreate the GDSII.
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/26/2007 (jdm): Initial version
+#
+##############################################################################
+
+require 'getoptlong'
+require 'gdsii/record.rb'
+include Gdsii
+
+usage = "
+Reads a GDSII file and then generates the corresponding Ruby code necessary
+to recreate the GDSII.
+
+Usage: gds2rb.rb [options] <gds-file> <rb-file> <gds-out-file>
+
+Options:
+
+ -s, --structs    Specify structure(s) in a space separated list to process.
+                  The default behavior is to process all structures.
+ -f, --force      Force existing Ruby file if it exists.
+ -h, --help       Displays this usage message.
+
+"
+
+# Get command-line arguments
+structs = []
+force = false
+
+opts = GetoptLong.new(
+  ['--structs',     '-s', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--force',       '-f', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT],
+  ['--help',        '-h', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT]
+)
+
+opts.each do |option, argument|
+  case option
+  when '--help'      : abort usage
+  when '--structs'   : structs = argument.split(/\s+/)
+  when '--force'     : force = true
+  end
+end
+
+# Get GDSII file directory from command line
+gds_file, rb_file, gds_out_file = ARGV
+unless (gds_file and rb_file and gds_out_file)
+  abort usage
+end
+
+# Fail if the Ruby file exists and force isn't enabled
+if File.exists? rb_file and not force
+  abort "\nRuby file exists: #{rb_file} (use -f or --force to ignore)"
+end
+
+space_before = [GRT_BOUNDARY, GRT_PATH, GRT_TEXT, GRT_NODE,
+                GRT_BOX, GRT_ENDSTR, GRT_ENDLIB]
+
+# Open Ruby file for write
+File.open(rb_file, 'w') do |rbf|
+  # Write the header information
+  rbf.puts "require 'gdsii'"
+  rbf.puts
+  rbf.puts "File.open('#{gds_out_file}', 'wb') do |outf|"
+  rbf.puts
+  
+  # Read the GDSII file and write out resulting GDSII files
+  File.open(gds_file, 'rb') do |inf|
+    # Read each record in the GDSII file
+    Record.read_each(inf) do |record|
+      rbf.puts if space_before.member?(record.type)
+      if record.type == GRT_BGNSTR
+        strname = Record.peek(inf).data_value
+        rbf.puts
+        rbf.puts '  ' + '#' * 76
+        rbf.puts '  # STRUCTURE: ' + strname.to_s
+        rbf.puts '  ' + '#' * 76
+        rbf.puts
+      end
+      rbf.puts "  Gdsii::Record.new(Gdsii::GRT_#{record.name}, #{record.data_value.inspect}).write(outf)"
+    end
+  end
+  
+  rbf.puts
+  rbf.puts "end"
+end
+
+

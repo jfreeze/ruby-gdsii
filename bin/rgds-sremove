@@ -1,0 +1,135 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdssremove.rb
+#
+# Removes structures and/or structure references from a GDSII file.
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/26/2007 (jdm): Initial version
+#
+##############################################################################
+
+
+require 'getoptlong'
+require 'gdsii/record.rb'
+include Gdsii
+
+# Build usage message
+usage = "
+Removes structures and/or structure references from a GDSII file.
+
+Usage: gdssremove.rb [options] -s <structs...> <in-gds-file> <out-gds-file>
+
+Options:
+
+ -s, --structs       Specify structure(s) in a space separated list to remove.
+ -f, --force         Force overwritting of the output GDSII file if it already
+                     exists.
+ -k, --keep-refs     Keeps SRef and ARef references (only removes structures).
+ -j, --keep-structs  Keeps structure definitions (only removes SRef and ARef).
+ -h, --help          Displays this usage message.
+
+Examples:
+
+ruby gdssremove.rb -s 'TOP SUB1' mydesign.gds outdesign.gds
+ruby gdssremove.rb -k -s 'SUB1'
+
+"
+
+# Get command-line arguments
+force = false
+structs = nil
+keep_refs = false
+keep_structs = false
+
+opts = GetoptLong.new(
+  ['--structs',      '-s', GetoptLong::REQUIRED_ARGUMENT],
+  ['--force',        '-f', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT],
+  ['--keep-refs',    '-k', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT],
+  ['--keep-structs', '-j', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT],
+  ['--help',         '-h', GetoptLong::OPTIONAL_ARGUMENT|GetoptLong::NO_ARGUMENT]
+)
+
+opts.each do |option, argument|
+  case option
+  when '--structs'      : structs = argument.split(/\s+/)
+  when '--force'        : force = true
+  when '--keep-refs'    : keep_refs = true
+  when '--keep-structs' : keep_structs = true
+  when '--help'         : abort usage
+  end
+end
+
+# Get GDSII file and output directory from command line
+in_gds, out_gds = ARGV
+unless in_gds and out_gds
+  abort usage
+end
+
+# Check to see if structs list was not set
+unless structs
+  abort "\nNo structures specified (-s or --structs)\n\n" + usage
+end
+
+# Check that GDSII file is readable
+unless File.readable? in_gds
+  abort "\nGDSII file does not exist or is not readable: #{in_gds}\n\n"
+end
+
+# Check to see if the output GDSII file already exists
+if File.exists? out_gds and not force
+  abort "\nOutput GDSII file exists: #{out_gds} (use -f or --force to override)\n\n"
+end
+
+
+# Read the GDSII file and write out resulting GDSII file
+File.open(in_gds, 'rb') do |inf|
+  File.open(out_gds, 'wb') do |outf|
+
+    # set r/w flags
+    remove_struct = false
+    remove_ref = false
+  
+    # Read each record in the GDSII file
+    Record.read_each(inf) do |record|
+      
+      case record.type
+      when GRT_BGNSTR
+        # read structure name and determine if this should be removed or not
+        if structs.member?(Record.peek(inf).data_value) and not keep_structs
+          remove_struct = true
+          next
+        end
+      when GRT_SREF, GRT_AREF
+        # read referenced name and determine if this should be removed or not
+        if structs.member?(Record.peek(inf).data_value) and not keep_refs
+          remove_ref = true
+          next
+        end
+      when GRT_ENDEL
+        # reset removal flag at the end of a reference definition
+        if remove_ref
+          remove_ref = false
+          next
+        end
+      when GRT_ENDSTR
+        # reset removal flag at the end of a structure definition
+        if remove_struct
+          remove_struct = false
+          next
+        end
+      end
+
+      # write the record if desired...
+      record.write(outf) unless remove_struct or remove_ref
+      
+    end
+    
+  end
+end

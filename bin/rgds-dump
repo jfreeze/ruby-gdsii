@@ -1,0 +1,38 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdsdump.rb
+#
+# Dumps a GDSII file contents into a text-readable format.
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/26/2007 (jdm): Initial version
+#
+##############################################################################
+
+
+require 'gdsii/record.rb'
+include Gdsii
+
+# usage...
+if (file_name = ARGV[0]).nil? then
+  abort "
+Dumps a GDSII file contents into a text-readable format.
+
+Usage: gdsdump.rb <gds-file>
+
+"
+end
+
+# display the string representation for each record
+File.open(file_name, 'rb') do |file|
+  while (rec = Record.read(file)) do
+    puts rec.to_s
+  end
+end
+

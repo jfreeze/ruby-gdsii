@@ -1,0 +1,166 @@
+#!/usr/bin/env ruby
+##############################################################################
+#
+# == gdstree.rb
+#
+# Dumps a hierarchy tree of structures used within a given GDSII file.
+#
+# === Author
+#
+# James D. Masters (james.d.masters@gmail.com)
+#
+# === History
+#
+# * 03/27/2007 (jdm): Initial version
+#
+#
+##############################################################################
+
+
+require 'getoptlong'
+require 'gdsii/record.rb'
+include Gdsii
+
+# Build usage message
+usage = "
+Dumps a hierarchy tree of structures used within a given GDSII file.
+
+Usage: gdstree.rb [options] <gds-file> 
+
+Options:
+
+ -t, --top-structs  Explicitly specify the top structure name(s) to use in
+                    the tree.  The default behavior is to identify the top
+                    structure(s) in the hierarchy automatically.
+ -c, --inst-counts  Include instantiation counts in the tree.
+ -b, --broken-refs  Indicate how broken references are handled.  Possible values
+                    are 'annotate' or 'prune'.  The default behavior is to
+                    ignore broken references.
+ -d, --delimiter    Set hierarchy delimiter (default is '/').
+ -h, --help         Displays this usage message.
+
+Examples:
+
+ruby gdstree.rb design.gds
+ruby gdstree.rb --delimiter . design.gds
+ruby gdstree.rb --inst-counts design.gds
+ruby gdstree.rb --top-structs 'mytop othertop' --broken-refs annotate
+
+"
+
+# Get command-line arguments
+top_structs = []
+show_inst_counts = false
+broken_refs = nil
+delimiter = '/'
+
+opts = GetoptLong.new(
+  ['--top-structs', '-t', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--inst-counts', '-c', GetoptLong::NO_ARGUMENT],
+  ['--broken-refs', '-b', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--delimiter',   '-d', GetoptLong::OPTIONAL_ARGUMENT],
+  ['--help',        '-h', GetoptLong::NO_ARGUMENT]
+)
+
+opts.each do |option, argument|
+  case option
+  when '--top-structs' : top_structs = argument.split(/\s+/)
+  when '--inst-counts' : show_inst_counts = argument
+  when '--broken-refs' : broken_refs = argument
+  when '--delimiter'   : delimiter = argument
+  when '--help'        : abort usage
+  end
+end
+
+# Get GDSII file directory from command line
+unless (gds_file = ARGV[0])
+  abort usage
+end
+
+
+#
+# Class to define a structure within the hierarchy
+#
+class HierStruct
+  # Make the attributes accessible
+  attr_accessor :name, :children
+
+  # Create a new HierStruct
+  def initialize(name, delimiter, inst_counts, broken_refs)
+    @name = name
+    @delimiter = delimiter
+    @inst_counts = inst_counts
+    @broken_refs = broken_refs.to_sym unless broken_refs.nil?
+    @children = Hash.new {|hash, key| hash[key] = 0}
+  end
+
+  # Display the hierarchy of this HierStruct
+  def puts(structs, prefix='', suffix='')
+    # build the hierarchy string then display it
+    string = prefix + @delimiter + @name + suffix
+    $stdout.puts string
+
+    # display the hierarchy for all children of this struct
+    @children.each_pair do |struct_name, num_placed|
+      
+      cnt_suffix = (@inst_counts) ? "(#{num_placed})" : ''
+
+      if (struct = structs[struct_name])
+        # display the child's hierarchy
+        struct.puts(structs, string, cnt_suffix)
+      else
+        # broken reference; deal with appropriately
+        case @broken_refs
+        when :annotate : $stdout.puts string + '(MISSING)'
+        when :prune    : nil
+        else
+          $stdout.puts string + @delimiter + struct_name + cnt_suffix
+        end
+      end
+      
+    end
+  end
+end
+
+
+#
+# Main code
+#
+
+# get the structure and instance placement from the gdsii file
+structs = {}
+has_parent = {}
+File.open(gds_file, 'rb') do |file|
+  while (rec=Record.read(file)) do
+    if rec.is_strname?
+      # inside a structure definition
+      str = HierStruct.new(rec.data_value, delimiter, show_inst_counts, broken_refs)
+      structs[str.name] = str
+      has_parent[str.name] = false unless has_parent.has_key?(str.name)
+    elsif rec.is_sname?
+      # instance in this structure
+      ref_str = rec.data_value
+      str.children[ref_str] += 1
+      has_parent[ref_str] = true
+    end
+  end
+end
+
+
+# if the user provides a list of top structure names, then use that list;
+# otherwise build our own.
+if top_structs.empty?
+  top_structs = has_parent.delete_if {|key, value| value}.keys.sort
+end
+
+# Output hierarch(y/ies)...
+unless top_structs.empty?
+  top_structs.each do |struct|
+    if structs.has_key?(struct)
+      structs[struct].puts(structs)
+    else
+      warn "WARNING: structure #{struct} not found"
+    end
+  end
+end
+
