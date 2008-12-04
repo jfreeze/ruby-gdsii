@@ -29,7 +29,7 @@ Dumps a unique list of layers and their respective datatypes used in this
 GDSII file.  Each layer/datatype pair is in the form 'LAYER DTYPE' with
 a layer on each line.
 
-Usage: gdslayers.rb <gds-file>
+Usage: #{File.basename($PROGRAM_NAME)} <gds-file>
 
 "
 end

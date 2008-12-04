@@ -21,10 +21,11 @@ require 'gdsii/record.rb'
 include Gdsii
 
 # Build usage message
+program = File.basename($PROGRAM_NAME)
 usage = "
 Removes structures and/or structure references from a GDSII file.
 
-Usage: gdssremove.rb [options] -s <structs...> <in-gds-file> <out-gds-file>
+Usage: #{File.basename($PROGRAM_NAME)} [options] -s <structs...> <in-gds-file> <out-gds-file>
 
 Options:
 
@@ -37,8 +38,8 @@ Options:
 
 Examples:
 
-ruby gdssremove.rb -s 'TOP SUB1' mydesign.gds outdesign.gds
-ruby gdssremove.rb -k -s 'SUB1'
+ruby #{program} -s 'TOP SUB1' mydesign.gds outdesign.gds
+ruby #{program} -k -s 'SUB1'
 
 "
 

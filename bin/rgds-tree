@@ -22,10 +22,11 @@ require 'gdsii/record.rb'
 include Gdsii
 
 # Build usage message
+program = File.basename($PROGRAM_NAME)
 usage = "
 Dumps a hierarchy tree of structures used within a given GDSII file.
 
-Usage: gdstree.rb [options] <gds-file> 
+Usage: #{File.basename($PROGRAM_NAME)} [options] <gds-file> 
 
 Options:
 
@@ -41,10 +42,10 @@ Options:
 
 Examples:
 
-ruby gdstree.rb design.gds
-ruby gdstree.rb --delimiter . design.gds
-ruby gdstree.rb --inst-counts design.gds
-ruby gdstree.rb --top-structs 'mytop othertop' --broken-refs annotate
+ruby #{program} design.gds
+ruby #{program} --delimiter . design.gds
+ruby #{program} --inst-counts design.gds
+ruby #{program} --top-structs 'mytop othertop' --broken-refs annotate
 
 "
 

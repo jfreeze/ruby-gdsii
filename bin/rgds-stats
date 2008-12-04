@@ -24,7 +24,7 @@ include Gdsii
 usage = "
 Dumps statistical information from a GDSII file.
 
-Usage: gdsssplit.rb [options] <gds-file> 
+Usage: #{File.basename($PROGRAM_NAME)} [options] <gds-file> 
 
 Options:
 

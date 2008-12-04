@@ -1,0 +1,6 @@
+= 1.0.1
+4 Dec 2008
+* Fixed naming bugs in commandline app help text
+
+= 1.0.0
+First general release

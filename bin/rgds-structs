@@ -24,7 +24,7 @@ if (file_name = ARGV[0]).nil? then
   abort "
 Dumps a of structure names defined in the GDSII file.
 
-Usage: gdsstructs.rb <gds-file>
+Usage: #{File.basename($PROGRAM_NAME)} <gds-file>
 
 "
 end

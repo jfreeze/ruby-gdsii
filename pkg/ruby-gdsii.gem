@@ -2,7 +2,7 @@ require 'rubygems'
 
 SPEC = Gem::Specification.new do |s|
   s.name     = "ruby-gdsii"
-  s.version  = "1.0.0"
+  s.version  = "1.0.1"
   s.author   = "James Masters, Jim Freeze, et al"
   s.email    = "james.d.masters@intel.com"
   s.homepage = "http://rubyforge.org/frs/?group_id=833"
@@ -11,6 +11,8 @@ SPEC = Gem::Specification.new do |s|
   s.summary  = "GDSII reader and writer with both high-level (easier to use) and low-level (faster performance) methods."
   s.executables = %w(rgds-debug rgds-dump rgds-join rgds-layers rgds-sremove rgds-ssplit rgds-stats rgds-structs rgds-tree rgds2rb)
   candidates = Dir.glob("{bin,lib,pkg,samples,test}/**/*")
+  candidates << "Rakefile"
+  candidates << "CHANGELOG.txt"
   s.files    = candidates.delete_if do |item|
                  item.include?("CVS") || item.include?("rdoc") || item.include?(".git")
                end

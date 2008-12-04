@@ -23,7 +23,7 @@ include Gdsii
 usage = "
 Joins structures from multiple GDSII files into a new GDSII file.
 
-Usage: gdssjoin.rb [options] <new-gds-file> <other-gds-files...>
+Usage: #{File.basename($PROGRAM_NAME)} [options] <new-gds-file> <other-gds-files...>
 
 Options:
 

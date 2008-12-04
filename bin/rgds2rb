@@ -24,7 +24,7 @@ usage = "
 Reads a GDSII file and then generates the corresponding Ruby code necessary
 to recreate the GDSII.
 
-Usage: gds2rb.rb [options] <gds-file> <rb-file> <gds-out-file>
+Usage: #{File.basename($PROGRAM_NAME)} [options] <gds-file> <rb-file> <gds-out-file>
 
 Options:
 

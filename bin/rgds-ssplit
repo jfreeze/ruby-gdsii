@@ -32,7 +32,7 @@ files will be named after their structure name.  At this time there are
 NO sref or aref intelligence (i.e. no hierarchy dependency checking) - so
 only one structure will exist per file.
 
-Usage: gdsssplit.rb [options] <gds-file> <output-dir>
+Usage: #{File.basename($PROGRAM_NAME)} [options] <gds-file> <output-dir>
 
 Options:
 

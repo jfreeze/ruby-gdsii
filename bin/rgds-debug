@@ -28,7 +28,7 @@ Reads a GDSII file and provides record-by-record details as the file is read.
 This is useful for debugging any GDSII read issues either by this library or
 by another application.
 
-Usage: gdsdebug.rb <gds-file>
+Usage: #{File.basename($PROGRAM_NAME)} <gds-file>
 
 "
 end

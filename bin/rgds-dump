@@ -24,7 +24,7 @@ if (file_name = ARGV[0]).nil? then
   abort "
 Dumps a GDSII file contents into a text-readable format.
 
-Usage: gdsdump.rb <gds-file>
+Usage: #{File.basename($PROGRAM_NAME)} <gds-file>
 
 "
 end
