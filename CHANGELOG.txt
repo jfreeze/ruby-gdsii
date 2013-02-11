@@ -1,3 +1,16 @@
+= 1.0.2
+11 Feb 2013
+* Ported Ruby 1.9 - hopefully retaining 1.8 compatibility.
+* Set up to use simplecov for test coverage.
+* Created unit tests from previous stand-alone tests.
+* Updated documentation
+
+Known issues:
+* Seeing segmentation faults under MacRuby 1.8
+* Font record seems corrupt in created GDSII files
+* Padding on ANGLE/REAL8 records looks incorrrect, but I've not seen
+  errors when programs process these records.
+
 = 1.0.1
 4 Dec 2008
 * Fixed naming bugs in commandline app help text
