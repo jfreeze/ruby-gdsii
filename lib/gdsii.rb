@@ -103,6 +103,7 @@
 module Gdsii
   # Empty module here as a placeholder for rdoc
 end
+require 'ruby_1_9_compat.rb'
 
 # Require byte order, constants, and mixins
 require 'gdsii/byte_order.rb'
