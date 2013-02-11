@@ -55,8 +55,10 @@ module Gdsii
     # Returns the minimum number of items necessary for this record type.
     def min_items
       case @data_type
-      when GDT_NO_DATA : 0
-      when GDT_ASCII   : (@size == 0) ? 1 : @min_len/@size
+      when GDT_NO_DATA
+		  0
+      when GDT_ASCII
+		  (@size == 0) ? 1 : @min_len/@size
       else 
         @min_len/@size
       end
@@ -65,8 +67,10 @@ module Gdsii
     # Returns the maximum number of items necessary for this record type.
     def max_items
       case @data_type
-      when GDT_NO_DATA : 0
-      when GDT_ASCII   : (@size == 0) ? 1 : @max_len/@size
+      when GDT_NO_DATA
+		  0
+      when GDT_ASCII
+		  (@size == 0) ? 1 : @max_len/@size
       else 
         @max_len/@size
       end
