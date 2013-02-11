@@ -1,15 +1,15 @@
 #!/usr/bin/env ruby
-require 'gdsii/boundary'
-require 'gdsii/path'
-require 'gdsii/strans'
-require 'gdsii/text'
-require 'gdsii/box'
-require 'gdsii/node'
-require 'gdsii/sref'
-require 'gdsii/aref'
-require 'gdsii/structure'
-require 'gdsii/library'
-require 'test/unit'
+require 'test/helper.rb'
+require_relative '../lib/gdsii/boundary'
+require_relative '../lib/gdsii/path'
+require_relative '../lib/gdsii/strans'
+require_relative '../lib/gdsii/text'
+require_relative '../lib/gdsii/box'
+require_relative '../lib/gdsii/node'
+require_relative '../lib/gdsii/sref'
+require_relative '../lib/gdsii/aref'
+require_relative '../lib/gdsii/structure'
+require_relative '../lib/gdsii/library'
 
 
 class GdsGroupTest < Test::Unit::TestCase

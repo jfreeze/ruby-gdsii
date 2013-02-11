@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
-
-require 'test/unit'
-require 'gdsii/record'
+require 'test/helper.rb'
+require_relative '../lib/gdsii/record'
 
 include Gdsii
 include Gdsii::RecData
