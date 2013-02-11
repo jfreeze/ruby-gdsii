@@ -51,7 +51,21 @@ module Gdsii
       #  record.inspect         #=> ["hello\0"]
       #  record.unpad.inspect   #=> ["hello"]
       #
-      def unpad()
+      # dmi unpad modified for use in ruby versions > 1.9
+      def unpad_1_9()
+        new_arr = []
+        @value.each do |string|
+          string = string.dup    # to avoid changing the original
+          while (string.getbyte(-1) == 0) 
+            string.chop!
+          end
+          new_arr.push string
+        end
+        new_arr
+      end
+
+      # dmi Original unpad
+      def unpad_1_8()
         new_arr = []
         @value.each do |string|
           string = string.dup    # to avoid changing the original
@@ -61,6 +75,19 @@ module Gdsii
           new_arr.push string
         end
         new_arr
+      end
+
+      # Choose an unpad appropriate for the Ruby version.
+      # Comparison's with versions before 1.8.0 of ruby don't work here.
+      # Attempts to use the output of Gem::Version('1.9.0') for
+      # version comparisons require rubygems be loaded for 1.8 and
+      # earlier versions of ruby complains when rubygems are missing.
+      # If you've got a solution that quietly determines if we have a
+      # ruby version 1.9.0 or later please fix the following:
+      if Gdsii::is_1_9_or_later?
+        alias_method :unpad, :unpad_1_9
+      else
+        alias_method :unpad, :unpad_1_8
       end
 
       # Same as #unpad but modifies the value of this object.
@@ -133,7 +160,17 @@ module Gdsii
       # given file as a GDSII ASCII record.
       def write(file)
         padded_str = self.pad
-        file.write padded_str
+        if padded_str.length != 1
+          raise RuntimeError, "expect 'self' to be an array of one element"
+        end
+        # The following line was modified to use the [0]. Before, no
+        # index was used and the call to file.write() coerced the array
+        # to a string.  Under Ruby 1.8 this produced a string like:
+        #     "aString"
+        # under 1.9 we go a string like:
+        #     "[\\"aString\\"]"
+		# This, among other things, produced invalid library names.
+        file.write padded_str[0]
       end
 
       # Joins all strings in the array with spaces and returns the joined
