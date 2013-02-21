@@ -63,6 +63,7 @@ module Gdsii
       
       # Set modify/access time to the current time
       now = Time.now
+	  @access_time = now
       self.modify_time = now
       self.access_time = now
 

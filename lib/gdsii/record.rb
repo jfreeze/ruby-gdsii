@@ -33,7 +33,7 @@ module Gdsii
       # A true value indicates that debugging messages should be enabled when
       # reading a GDSII file.  A false (or nil) value will suppress the
       # messages.
-      def read_debug(); @debug; end
+      def read_debug(); @debug ||= false; end
 
       # Sets the debugging value for reading GDSII records.
       def read_debug=(value); @debug = value; end

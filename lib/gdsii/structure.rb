@@ -167,7 +167,7 @@ module Gdsii
     #
     # Returns the modify time for this structure (returns Time)
     #
-    def modify_time(); @modify_time; end
+    def modify_time(); @modify_time ||= Time.now; end
 
     #
     # Reads records related to a Structure header from the given file handle.
