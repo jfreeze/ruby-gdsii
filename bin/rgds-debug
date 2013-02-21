@@ -18,6 +18,7 @@
 ##############################################################################
 
 
+require 'ruby_1_9_compat.rb'
 require 'gdsii/record.rb'
 include Gdsii
 

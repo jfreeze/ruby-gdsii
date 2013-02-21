@@ -17,6 +17,7 @@
 
 
 require 'getoptlong'
+require 'ruby_1_9_compat.rb'
 require 'gdsii/record.rb'
 include Gdsii
 
@@ -59,11 +60,16 @@ opts = GetoptLong.new(
 
 opts.each do |option, argument|
   case option
-  when '--structs'      : structs = argument.split(/\s+/)
-  when '--force'        : force = true
-  when '--keep-refs'    : keep_refs = true
-  when '--keep-structs' : keep_structs = true
-  when '--help'         : abort usage
+  when '--structs'
+	  structs = argument.split(/\s+/)
+  when '--force'
+	  force = true
+  when '--keep-refs'
+	  keep_refs = true
+  when '--keep-structs'
+	  keep_structs = true
+  when '--help'
+	  abort usage
   end
 end
 

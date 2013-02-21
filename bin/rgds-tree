@@ -18,6 +18,7 @@
 
 
 require 'getoptlong'
+require 'ruby_1_9_compat.rb'
 require 'gdsii/record.rb'
 include Gdsii
 
@@ -65,11 +66,16 @@ opts = GetoptLong.new(
 
 opts.each do |option, argument|
   case option
-  when '--top-structs' : top_structs = argument.split(/\s+/)
-  when '--inst-counts' : show_inst_counts = argument
-  when '--broken-refs' : broken_refs = argument
-  when '--delimiter'   : delimiter = argument
-  when '--help'        : abort usage
+  when '--top-structs'
+	  top_structs = argument.split(/\s+/)
+  when '--inst-counts'
+	  show_inst_counts = argument
+  when '--broken-refs'
+	  broken_refs = argument
+  when '--delimiter'
+	  delimiter = argument
+  when '--help'
+	  abort usage
   end
 end
 
@@ -112,8 +118,10 @@ class HierStruct
       else
         # broken reference; deal with appropriately
         case @broken_refs
-        when :annotate : $stdout.puts string + '(MISSING)'
-        when :prune    : nil
+        when :annotate
+			$stdout.puts string + '(MISSING)'
+        when :prune
+			nil
         else
           $stdout.puts string + @delimiter + struct_name + cnt_suffix
         end
